@@ -2,6 +2,25 @@ require 'libxml'
 
 XML = LibXML::XML
 
+def go
+
+  reader = XML::Reader.file(ARGV[0])
+
+  reader.read
+
+  while reader.read
+    case reader.node_type
+      when XML::Reader::TYPE_ELEMENT
+        if reader.name == "office:body"
+          do_body reader
+        else
+          reader.next
+        end
+        next
+    end
+  end
+
+end
 
 def do_body(reader)
   raise unless reader.name == "office:body"
@@ -45,24 +64,7 @@ def do_body(reader)
   f_text.close
 end
 
-
-reader = XML::Reader.file(ARGV[0])
-
-reader.read
-
-while reader.read
-  case reader.node_type
-    when XML::Reader::TYPE_ELEMENT
-      if reader.name == "office:body"
-        do_body reader
-      else
-        reader.next
-      end
-      next
-  end
-end
-
-
+go
 
 # while reader.read
 #   what = case reader.node_type
