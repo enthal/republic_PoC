@@ -3,13 +3,12 @@ require 'libxml'
 
 class OOXML
   XML = LibXML::XML
-  
+
   def initialize reader_source
     @reader = XML::Reader.file(reader_source)
   end
 
   def go
-
     @reader.read
     raise unless @reader.name == "office:document"
 
@@ -29,16 +28,20 @@ class OOXML
 
   def do_body
     raise unless @reader.name == "office:body"
-    start_depth = @reader.depth
+    @body_start_depth = @reader.depth
 
     Dir.mkdir("OUT") unless File.directory?("OUT")
-    f_text = File.open("OUT/out_text.html",  "w+")
-    f_note = File.open("OUT/out_notes.html",  "w+")
+    @f_text = File.open("OUT/out_text.html",  "w+")
+    @f_note = File.open("OUT/out_notes.html",  "w+")
 
-    f_text.puts "<!-- TEXT -->"
+    @f_text.puts "<!-- TEXT -->"
 
-    write_html = lambda {|s| f_text.puts (" " * (@reader.depth - start_depth)) + s}
+    process_body_elements @f_text
 
+    @f_text.close
+  end
+
+  def process_body_elements f
     html_tags_by_entity_name = {
       "p" => "p",
       "span" => "span",
@@ -49,15 +52,15 @@ class OOXML
       what = case @reader.node_type
         when XML::Reader::TYPE_ELEMENT
           if html_tags_by_entity_name.include? @reader.local_name
-            write_html[ "<#{html_tags_by_entity_name[@reader.local_name]}#{' /' if @reader.empty_element?}>" ]
+            write_html_line f, "<#{html_tags_by_entity_name[@reader.local_name]}#{' /' if @reader.empty_element?}>"
           end
           "#{@reader.name}   #{@reader.empty_element? ? '.' : ' :'}"
         when XML::Reader::TYPE_TEXT
-          write_html[ @reader.value ]
+          write_html_line f, @reader.value
           "#{@reader.value}"
         when XML::Reader::TYPE_END_ELEMENT
           if html_tags_by_entity_name.include? @reader.local_name
-            write_html[ "</#{html_tags_by_entity_name[@reader.local_name]}>" ]
+            write_html_line f, "</#{html_tags_by_entity_name[@reader.local_name]}>"
           end
           nil
         else
@@ -65,9 +68,12 @@ class OOXML
       end
       puts (". " * @reader.depth) + what if what
     end
-
-    f_text.close
   end
+
+  def write_html_line f, s
+    f.puts (" " * (@reader.depth - @body_start_depth)) + s
+  end
+
 end
 
 OOXML.new(ARGV[0]).go
