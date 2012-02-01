@@ -90,8 +90,8 @@ class OOXML
         when XML::Reader::TYPE_ELEMENT
           case @reader.name
             when "text:note-citation"
-              write_html_line f, "<A href='out_notes.html\##{note_id}'>"
-              write_html_line @f_note, "<div><a name='#{note_id}'><b>"
+              write_html_line f, "<A href='out_notes.html\##{note_id}' name='#{note_id}'>"
+              write_html_line @f_note, "<div><a href='out_text.html\##{note_id}' name='#{note_id}'><b>"
             when "text:note-body"
               process_body_elements @f_note
               puts "/// NOTE END"
