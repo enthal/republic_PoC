@@ -79,6 +79,15 @@ class OOXML
     end
   end
 
+  def do_note_ref
+    raise @reader.name unless @reader.name == "text:note-ref"
+    note_ref_name = @reader["text:ref-name"]
+
+    write_html_line @f_note, "<A href='\##{note_ref_name}'>"
+    process_body_elements @f_note
+    write_html_line @f_note, "</A>"
+  end
+
   def process_body_elements f
     html_tags_by_entity_name = {
       "p" => "p",
@@ -91,11 +100,15 @@ class OOXML
     while @reader.read and start_depth < @reader.depth
       what = case @reader.node_type
         when XML::Reader::TYPE_ELEMENT
-          case
-            when html_tags_by_entity_name.include?(@reader.local_name)
-              write_html_line f, "<#{html_tags_by_entity_name[@reader.local_name]}#{' /' if @reader.empty_element?}>"
-            when @reader.local_name == "note"
-              do_note f
+          if html_tags_by_entity_name.include? @reader.local_name
+            write_html_line f, "<#{html_tags_by_entity_name[@reader.local_name]}#{' /' if @reader.empty_element?}>"
+          else
+            case @reader.name
+              when "text:note"
+                do_note f
+              when "text:note-ref"
+                do_note_ref
+            end
           end
           "#{@reader.name}   #{@reader.empty_element? ? '.' : ' :'}"
         when XML::Reader::TYPE_TEXT
