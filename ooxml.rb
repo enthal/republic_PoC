@@ -110,8 +110,6 @@ class OOXML
               write_html_line @f_note, "</b></a>"
             when "text:note-body"
               write_html_line @f_note, "</div>"
-            when "text:note"
-              return
           end
       end
     end
