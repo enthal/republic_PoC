@@ -41,6 +41,44 @@ class OOXML
     @f_text.close
   end
 
+  def process_body_elements f
+    html_tags_by_entity_name = {
+      "p" => "p",
+      "span" => "span",
+      "h" => "h1",
+    }
+
+    start_depth = @reader.depth
+
+    while @reader.read and start_depth < @reader.depth
+      what = case @reader.node_type
+        when XML::Reader::TYPE_ELEMENT
+          if html_tags_by_entity_name.include? @reader.local_name
+            write_html_line f, "<#{html_tags_by_entity_name[@reader.local_name]}#{' /' if @reader.empty_element?}>"
+          else
+            case @reader.name
+              when "text:note"
+                do_note f
+              when "text:note-ref"
+                do_note_ref
+            end
+          end
+          "#{@reader.name}   #{@reader.empty_element? ? '.' : ' :'}"
+        when XML::Reader::TYPE_TEXT
+          write_html_line f, @reader.value.strip
+          "#{@reader.value}"
+        when XML::Reader::TYPE_END_ELEMENT
+          if html_tags_by_entity_name.include? @reader.local_name
+            write_html_line f, "</#{html_tags_by_entity_name[@reader.local_name]}>"
+          end
+          nil
+        else
+          next
+      end
+      puts (". " * @reader.depth) + what if what
+    end
+  end
+
   def do_note f
     raise unless @reader.name == "text:note"
     note_id = @reader["text:id"]
@@ -86,44 +124,6 @@ class OOXML
     write_html_line @f_note, "<A href='\##{note_ref_name}'>"
     process_body_elements @f_note
     write_html_line @f_note, "</A>"
-  end
-
-  def process_body_elements f
-    html_tags_by_entity_name = {
-      "p" => "p",
-      "span" => "span",
-      "h" => "h1",
-    }
-
-    start_depth = @reader.depth
-
-    while @reader.read and start_depth < @reader.depth
-      what = case @reader.node_type
-        when XML::Reader::TYPE_ELEMENT
-          if html_tags_by_entity_name.include? @reader.local_name
-            write_html_line f, "<#{html_tags_by_entity_name[@reader.local_name]}#{' /' if @reader.empty_element?}>"
-          else
-            case @reader.name
-              when "text:note"
-                do_note f
-              when "text:note-ref"
-                do_note_ref
-            end
-          end
-          "#{@reader.name}   #{@reader.empty_element? ? '.' : ' :'}"
-        when XML::Reader::TYPE_TEXT
-          write_html_line f, @reader.value.strip
-          "#{@reader.value}"
-        when XML::Reader::TYPE_END_ELEMENT
-          if html_tags_by_entity_name.include? @reader.local_name
-            write_html_line f, "</#{html_tags_by_entity_name[@reader.local_name]}>"
-          end
-          nil
-        else
-          next
-      end
-      puts (". " * @reader.depth) + what if what
-    end
   end
 
   def write_html_line f, s
