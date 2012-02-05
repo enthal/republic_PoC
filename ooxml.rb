@@ -34,9 +34,22 @@ class OOXML
     @f_text = File.open("OUT/text.html",  "w+")
     @f_note = File.open("OUT/notes.html", "w+")
 
+    [@f_note, @f_text].each {|f| write_head f }
     process_body_elements @f_text
+    [@f_note, @f_text].each {|f| write_foot f }
+  end
 
-    @f_text.close
+  def write_head f
+    f.puts "<HTML>"
+    f.puts "<HEAD>"
+    f.puts '  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">'
+    f.puts "</HEAD>"
+    f.puts "<BODY>"
+  end
+
+  def write_foot f
+    f.puts "</BODY>"
+    f.puts "</HTML>"
   end
 
   def process_body_elements f
