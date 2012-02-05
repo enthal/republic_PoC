@@ -31,10 +31,8 @@ class OOXML
     @body_start_depth = @reader.depth
 
     Dir.mkdir("OUT") unless File.directory?("OUT")
-    @f_text = File.open("OUT/out_text.html",  "w+")
-    @f_note = File.open("OUT/out_notes.html",  "w+")
-
-    @f_text.puts "<!-- TEXT -->"
+    @f_text = File.open("OUT/text.html",  "w+")
+    @f_note = File.open("OUT/notes.html", "w+")
 
     process_body_elements @f_text
 
@@ -90,8 +88,8 @@ class OOXML
         when XML::Reader::TYPE_ELEMENT
           case @reader.name
             when "text:note-citation"
-              write_html_line f, "<A href='out_notes.html\##{note_id}' name='#{note_id}'>"
-              write_html_line @f_note, "<div><a href='out_text.html\##{note_id}' name='#{note_id}'><b>"
+              write_html_line f, "<A href='notes.html\##{note_id}' name='#{note_id}'>"
+              write_html_line @f_note, "<div><a href='text.html\##{note_id}' name='#{note_id}'><b>"
             when "text:note-body"
               process_body_elements @f_note
               puts "/// NOTE END"
